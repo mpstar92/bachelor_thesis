@@ -1,0 +1,191 @@
+---
+title: "Untitled"
+author: "Michael Riethmüller"
+date: "2024-01-18"
+output: html_document
+---
+```{r}
+library(data.table)
+library(magrittr)
+library(dplyr)
+library(rstatix)
+```
+
+```{r}
+all_networks_go_1<-data.table::fread("results/all_networks_go_1.txt")
+all_networks_go_1_ss<-data.table::fread("results/all_networks_go_1_sp.txt")
+all_networks_go_1_sp<-data.table::fread("results/all_networks_go_1_ss.txt")
+
+all_networks_go_1_ss[version == 2, ("version") := 6]
+all_networks_go_1_ss[version == 3, ("version") := 7]
+all_networks_go_1_sp[version == 2, ("version") := 8]
+all_networks_go_1_sp[version == 3, ("version") := 9]
+
+Version_list<-c("Version 1 = Subsampling Spearman 25"," Version 2 = Subsampling Pearson 25","Version 3 = Bootstrap Spearman", "Version 4 = Bootstrap Pearson","Version 5 = wTO",
+           "Version 6 = Subsampling Spearman 20","Version 7 = Subsampling Spearman 30","Version 8 = Subsampling Pearson 20","Version 9 = Subsampling Pearson 30")
+
+Version_list
+```
+
+
+```{r}
+library(psych)
+
+describeBy(all_networks_go_1$rho1,all_networks_go_1$version)
+
+describeBy(all_networks_go_1$rank_rho,all_networks_go_1$version)
+
+```
+
+```{r}
+#anova test rho all
+
+model_rho_all <- aov(rho1~factor(version)+Error(factor(ID)), data = all_networks_go_1)
+
+summary(model_rho_all)
+#rank
+model_rank_rho_all <- aov(rank_rho~factor(version)+Error(factor(ID)), data = all_networks_go_1)
+
+summary(model_rho_all)
+```
+
+```{r}
+res <- anova_test(data = all_networks_go_1, dv = rho1, wid = ID, within = version)
+res
+get_anova_table(res, correction = "auto")
+
+```
+```{r}
+#rank
+res <- anova_test(data = all_networks_go_1, dv = rank_rho, wid = ID, within = version)
+res
+get_anova_table(res, correction = "auto")
+```
+
+```{r}
+#t test
+all_networks_go_1_vers1 <- subset(all_networks_go_1, version == 1)
+all_networks_go_1_vers2 <- subset(all_networks_go_1, version == 2)
+all_networks_go_1_vers3 <- subset(all_networks_go_1, version == 3)
+all_networks_go_1_vers4 <- subset(all_networks_go_1, version == 4)
+all_networks_go_1_vers5 <- subset(all_networks_go_1, version == 5)
+
+all_networks_go_1_vers6 <- subset(all_networks_go_1_ss, version == 6)
+all_networks_go_1_vers7 <- subset(all_networks_go_1_ss, version == 7)
+all_networks_go_1_vers8 <- subset(all_networks_go_1_sp, version == 8)
+all_networks_go_1_vers9 <- subset(all_networks_go_1_sp, version == 9)
+
+```
+```{r}
+t.test(all_networks_go_1_vers1$rho1,all_networks_go_1_vers2$rho1, paired = TRUE, alternative = "two.sided")
+```
+```{r}
+pwc <- all_networks_go_1_ss %>%
+  pairwise_t_test( rho1 ~ version, paired = TRUE, p.adjust.method = "bonferroni", alternative = "two.sided")
+pwc
+
+```
+```{r}
+pwc <- all_networks_go_1_sp %>%
+  pairwise_t_test( rho1 ~ version, paired = TRUE, p.adjust.method = "bonferroni", alternative = "two.sided")
+pwc
+
+```
+```{r}
+pwc <- all_networks_go_1 %>%
+  pairwise_t_test( rho1 ~ version, paired = TRUE, p.adjust.method = "bonferroni", alternative = "two.sided")
+pwc
+
+```
+
+```{r}
+pwc <- all_networks_go_1 %>%
+  pairwise_t_test( rank_rho ~ version, paired = TRUE, p.adjust.method = "bonferroni", alternative = "two.sided")
+pwc
+
+```
+```{r}
+friedman.test(y=all_networks_go_1$rho1, groups=all_networks_go_1$version, blocks=all_networks_go_1$ID)
+
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1$rho1, all_networks_go_1$version, p.adj = "bonf")
+
+```
+
+```{r}
+friedman.test(y=all_networks_go_1$rank_rho, groups=all_networks_go_1$version, blocks=all_networks_go_1$ID)
+
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1$rank_rho, all_networks_go_1$version, p.adj = "bonf")
+
+```
+```{r}
+all_networks_go_1_vers_1 <- subset(all_networks_go_1, version == c(1,2,3,4))
+
+print(head(all_networks_go_1_vers_1[order(-all_networks_go_1_vers_1$ID), ],30))
+
+friedman.test(y=all_networks_go_1$rank_rho, groups=all_networks_go_1$version, blocks=all_networks_go_1$ID)
+
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1$rank_rho, all_networks_go_1$version, p.adj = "bonf")
+
+```
+
+
+
+
+
+```{r}
+friedman.test(y=all_networks_go_1_sp$rho1, groups=all_networks_go_1_sp$version, blocks=all_networks_go_1_sp$ID)
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1_sp$rho1, all_networks_go_1_sp$version, p.adj = "bonf")
+```
+
+
+
+
+
+```{r}
+
+
+friedman.test(y=all_networks_go_1_sp$rank_rho, groups=all_networks_go_1_sp$version, blocks=all_networks_go_1_sp$ID)
+
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1_sp$rank_rho, all_networks_go_1_sp$version, p.adj = "bonf")
+
+```
+
+
+```{r}
+friedman.test(y=all_networks_go_1_ss$rho1, groups=all_networks_go_1_ss$version, blocks=all_networks_go_1_ss$ID)
+
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1_ss$rho1, all_networks_go_1_ss$version, p.adj = "bonf")
+
+
+friedman.test(y=all_networks_go_1_ss$rank_rho, groups=all_networks_go_1_ss$version, blocks=all_networks_go_1_ss$ID)
+
+### pairwise test
+pairwise.wilcox.test(all_networks_go_1_ss$rank_rho, all_networks_go_1_ss$version, p.adj = "bonf")
+
+```
+```{r}
+```
+
+
+```{r}
+anova_training <- aov(all_networks_go_1$rho1~all_networks_go_1$version)
+summary(anova_training)
+```
+
+
+```{r}
+
+pairwise.t.test(all_networks_go_1$rank_rho,all_networks_go_1$version, p.adjust="bonferroni")
+```
+
+
+```{r}
+anova_training <- aov(all_networks_go_1$rank_rho~all_networks_go_1$version)
+summary(anova_training)
+```

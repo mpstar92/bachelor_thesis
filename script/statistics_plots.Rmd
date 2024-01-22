@@ -1,0 +1,740 @@
+---
+title: "statistics_plots"
+author: "Michael Riethmüller"
+date: "2023-12-12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+
+ctrl_mayo_TCX<-read.csv("../data/control_mayo_TCX.csv")
+ad_mayo_TCX<-read.csv("../data/AD_mayo_TCX.csv")
+mayo_TCX_data<-read.delim("../data/mayo_TCX_norm_deseq.txt") #complete data from ctrl and ad patients
+rownames(mayo_TCX_data)<-mayo_TCX_data$X
+
+#filter mayo_TCX data and split into two datasets with ad and ctrl
+list_mayo_TCX_ctrl<-ctrl_mayo_TCX$fileName
+list_mayo_TCX_ctrl<-paste( "X",list_mayo_TCX_ctrl, sep="")
+
+list_mayo_TCX_ad<-ad_mayo_TCX$fileName
+list_mayo_TCX_ad<-paste( "X",list_mayo_TCX_ad, sep="")
+
+mayo_TCX_ctrl <- mayo_TCX_data[list_mayo_TCX_ctrl]
+mayo_TCX_ctrl <- as.data.frame(t(mayo_TCX_ctrl))
+mayo_TCX_ad <-mayo_TCX_data[list_mayo_TCX_ad]
+mayo_TCX_ad <- as.data.frame(t(mayo_TCX_ad))
+
+
+Matrix_mayo_TCX_ctrl <- matrix(unlist(mayo_TCX_ctrl), ncol = ncol(mayo_TCX_ctrl), byrow = FALSE)
+colnames(Matrix_mayo_TCX_ctrl)<-colnames(mayo_TCX_ctrl)
+rownames(Matrix_mayo_TCX_ctrl)<-rownames(mayo_TCX_ctrl)
+
+Matrix_mayo_TCX_ad <- matrix(unlist(mayo_TCX_ad), ncol = ncol(mayo_TCX_ad), byrow = FALSE)
+colnames(Matrix_mayo_TCX_ad)<-colnames(mayo_TCX_ad)
+rownames(Matrix_mayo_TCX_ad)<-rownames(mayo_TCX_ad)
+
+dim(Matrix_mayo_TCX_ad)
+dim(Matrix_mayo_TCX_ctrl)
+```
+
+```{r}
+library(ggplot2)
+
+mse_results<-read.delim("../results/mse/mse_results.txt")
+
+mse_results_sub_10<-mse_results[mse_results$n_sub == "10", ]
+mse_results_10<-read.delim("../results/mse/mse_results_sub10.txt")
+mse_results_10 <- rbind(mse_results_10 , mse_results_sub_10)
+
+mse_results_20<-read.delim("../results/mse/mse_results_sub20.txt")
+mse_results_sub_20<-mse_results[mse_results$n_sub == "20", ]
+mse_results_20 <- rbind(mse_results_20 , mse_results_sub_20)
+
+mse_results_30<-read.delim("../results/mse/mse_results_sub30.txt")
+mse_results_sub_30<-mse_results[mse_results$n_sub == "30", ]
+mse_results_30 <- rbind(mse_results_30 , mse_results_sub_30)
+
+mse_results_25<-read.delim("../results/mse/mse_results_sub25.txt")
+mse_results_all <- rbind(mse_results_30 , mse_results_20 , mse_results_10,mse_results_25)
+
+
+mse_results_it_10<-mse_results[mse_results$n_it == "10", ]
+mse_results_it_20<-mse_results[mse_results$n_it == "20", ]
+mse_results_it_30<-mse_results[mse_results$n_it == "30", ]
+mse_results_it_40<-mse_results[mse_results$n_it == "40", ]
+mse_results_it_50<-mse_results[mse_results$n_it == "50", ]
+mse_results_it_100<-mse_results[mse_results$n_it == "100", ]
+```
+
+
+```{r, echo=FALSE}
+plot(mse_results_10$n_it,mse_results_10$mse_1,ylim = c(0.05, 0.2))
+plot(mse_results_20$n_it,mse_results_20$mse_1,ylim = c(0.05, 0.2))
+plot(mse_results_30$n_it,mse_results_30$mse_1,ylim = c(0.05, 0.2))
+plot(mse_results_25$n_it,mse_results_25$mse_1,ylim = c(0.05, 0.2))
+plot(mse_results_it_20$n_sub,mse_results_it_20$first,ylim = c(0, 0.3))
+```
+```{r, echo=FALSE}
+ggplot(mse_results_all, aes(x = n_it, y = mse_1, color = factor(n_sub))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0.07, 0.13)) +
+  labs(x = "n_it", y = "MSE", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'number of Samplings' ")
+
+ggplot(mse_results_all, aes(x = n_it, y = mse_1, color = factor(n_sub))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  labs(x = "n_it", y = "first", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'number of Samplings' ")
+
+####
+ggplot(mse_results_all, aes(x = n_sub, y = mse_1, color = factor(n_it))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0.07, 0.13)) +
+  labs(x = "n_sub", y = "first", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'size of trainingset'")
+
+ggplot(mse_results_all, aes(x = n_sub, y = mse_1, color = factor(n_it))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  labs(x = "n_sub", y = "first", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'size of trainingset'")
+```
+```{r}
+
+library(ggplot2)
+
+mse_results_new_10<-read.delim("../results/mse/mse_results_sub10_new.txt")
+mse_results_new_20<-read.delim("../results/mse/mse_results_sub20_new.txt")
+mse_results_new_25<-read.delim("../results/mse/mse_results_sub25_new.txt")
+mse_results_new_30<-read.delim("../results/mse/mse_results_sub30_new.txt")
+
+mse_results_new <- rbind(mse_results_new_10 , mse_results_new_20,mse_results_new_25,mse_results_new_30)
+mse_results_new_nit_10 <- mse_results[mse_results_new$n_it == "10", ]
+mse_results_new_nit_20 <- mse_results[mse_results_new$n_it == "20", ]
+mse_results_new_nit_30 <- mse_results[mse_results_new$n_it == "30", ]
+mse_results_new_nit_40 <- mse_results[mse_results_new$n_it == "40", ]
+
+
+```
+
+```{r}
+ggplot(mse_results_new, aes(x = n_it, y = mse_1, color = factor(n_sub))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0.0, 0.13)) +
+  labs(x = "n_it", y = "MSE", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'number of Samplings' ")
+
+ggplot(mse_results_new, aes(x = n_it, y = mse_1, color = factor(n_sub))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  labs(x = "n_it", y = "first", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'number of Samplings' ")
+
+####
+ggplot(mse_results_new, aes(x = n_sub, y = mse_1, color = factor(n_it))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0.0, 0.13)) +
+  labs(x = "n_sub", y = "first", color = "n_it") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'size of trainingset'")
+
+ggplot(mse_results_new, aes(x = n_sub, y = mse_1, color = factor(n_it))) +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  labs(x = "n_sub", y = "first", color = "n_it") +
+  ggtitle("Scatter Plot of 'MSE for Control' by 'size of trainingset'")
+```
+
+
+```{r}
+
+library(ggplot2)
+
+mse_results<-read.delim("../results/mse/mse_results_train_test.txt")
+
+mse_results_sub_10<-mse_results[mse_results$n_sub == "10", ]
+
+mse_results_sub_20<-mse_results[mse_results$n_sub == "20", ]
+
+mse_results_sub_25<-mse_results[mse_results$n_sub == "25", ]
+
+mse_results_sub_30<-mse_results[mse_results$n_sub == "30", ]
+
+
+
+mse_results_it_10<-mse_results[mse_results$n_it == "10", ]
+mse_results_it_20<-mse_results[mse_results$n_it == "20", ]
+mse_results_it_30<-mse_results[mse_results$n_it == "30", ]
+mse_results_it_40<-mse_results[mse_results$n_it == "40", ]
+mse_results_it_100<-mse_results[mse_results$n_it == "100", ]
+```
+
+
+```{r}
+ggplot(mse_results, aes(x = n_it, y = mse_train, color = factor(n_sub))) +
+  geom_point() +
+  #scale_y_continuous(limits = c(0.0, 0.13)) +
+  labs(x = "n_it", y = "MSE_train", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for training' by 'number of Samplings' ")
+
+ggplot(mse_results, aes(x = n_it, y = mse_test, color = factor(n_sub))) +
+  geom_point() +
+  #scale_y_continuous(limits = c(0, 0.5)) +
+  labs(x = "n_it", y = "MSE_test", color = "n_sub") +
+  ggtitle("Scatter Plot of 'MSE for test' by 'number of Samplings' ")
+
+####
+ggplot(mse_results, aes(x = n_sub, y = mse_train, color = factor(n_it))) +
+  geom_point() +
+  #scale_y_continuous(limits = c(0.0, 0.13)) +
+  labs(x = "n_sub", y = "MSE_train", color = "n_it") +
+  ggtitle("Scatter Plot of 'MSE for training' by 'size of trainingset'")
+
+ggplot(mse_results, aes(x = n_sub, y = mse_test, color = factor(n_it))) +
+  geom_point() +
+  #scale_y_continuous(limits = c(0, 0.5)) +
+  labs(x = "n_sub", y = "MSE_test", color = "n_it") +
+  ggtitle("Scatter Plot of 'MSE for test' by 'size of trainingset'")
+```
+
+
+```{r, echo=FALSE}
+## check for linearity
+
+gene1<-"ENSG00000233008"
+gene2<-"ENSG00000238164"
+
+x<- Matrix_mayo_TCX_ctrl[,gene1]
+y<- Matrix_mayo_TCX_ctrl[,gene2]
+plot(x,y, main =paste("Scatterplot of ", gene1, " and ", gene2),xlab = gene1, ylab = gene2)
+abline(lm(y ~ x), col = "red")
+
+x<- Matrix_mayo_TCX_ctrl[,1]
+y<- Matrix_mayo_TCX_ctrl[,2]
+plot(x,y, main =paste("Scatterplot of ", gene1, " and ", gene2),xlab = gene1, ylab = gene2)
+abline(lm(y ~ x), col = "red")
+
+x<- Matrix_mayo_TCX_ctrl[,1]
+y<- Matrix_mayo_TCX_ctrl[,3]
+plot(x,y, main =paste("Scatterplot of ", gene1, " and ", gene2),xlab = gene1, ylab = gene2)
+abline(lm(y ~ x), col = "red")
+
+x<- Matrix_mayo_TCX_ctrl[,1]
+y<- Matrix_mayo_TCX_ctrl[,34]
+plot(x,y, main =paste("Scatterplot of ", gene1, " and ", gene2),xlab = gene1, ylab = gene2)
+abline(lm(y ~ x), col = "red")
+
+x<- Matrix_mayo_TCX_ctrl[,1]
+y<- Matrix_mayo_TCX_ctrl[,170]
+plot(x,y, main =paste("Scatterplot of ", gene1, " and ", gene2),xlab = gene1, ylab = gene2)
+abline(lm(y ~ x), col = "red")
+
+gene1<-"ENSG00000238009"
+gene2<-"ENSG00000241860"
+x<- Matrix_mayo_TCX_ctrl[,gene1]
+y<- Matrix_mayo_TCX_ctrl[,gene2]
+plot(x,y, main =paste("Scatterplot of ", gene1, " and ", gene2),xlab = gene1, ylab = gene2)
+abline(lm(y ~ x), col = "red")
+````
+
+```{r, echo=FALSE}
+# check for normalization
+
+gene<-"ENSG00000238009"
+sample_data <-Matrix_mayo_TCX_ctrl[,gene]
+
+# Create a normal probability plot (Q-Q plot)
+qqnorm(sample_data, main = paste("Q-Q Plot of Gene", gene))
+qqline(sample_data, col = "red")
+
+gene<-colnames(Matrix_mayo_TCX_ctrl)[2]
+sample_data <-Matrix_mayo_TCX_ctrl[,2]
+# Create a normal probability plot (Q-Q plot)
+qqnorm(sample_data, main = paste("Q-Q Plot of Gene", gene))
+qqline(sample_data, col = "red")
+
+gene<-colnames(Matrix_mayo_TCX_ctrl)[3]
+sample_data <-Matrix_mayo_TCX_ctrl[,3]
+# Create a normal probability plot (Q-Q plot)
+qqnorm(sample_data, main = paste("Q-Q Plot of Gene", gene))
+qqline(sample_data, col = "red")
+
+gene<-colnames(Matrix_mayo_TCX_ctrl)[19]
+sample_data <-Matrix_mayo_TCX_ctrl[,19]
+# Create a normal probability plot (Q-Q plot)
+qqnorm(sample_data, main = paste("Q-Q Plot of Gene", gene))
+qqline(sample_data, col = "red")
+
+gene<-colnames(Matrix_mayo_TCX_ctrl)[123]
+sample_data <-Matrix_mayo_TCX_ctrl[,123]
+# Create a normal probability plot (Q-Q plot)
+qqnorm(sample_data, main = paste("Q-Q Plot of Gene", gene))
+qqline(sample_data, col = "red")
+````
+```{r}
+brain_gold<-data.table::fread("../data/gold_standard/brain_goldst.dat",header = FALSE)
+brain_naive<-data.table::fread("../data/gold_standard/gobp_naive_standard.dat",header = FALSE)
+
+
+
+```
+```{r}
+count_of_ones_b <- brain_gold[V3 == 1, .N]
+total_b<- length(brain_gold$V3)
+print(cat("Number of positive edges in Brain Gold standard ",count_of_ones_b))
+print(cat("Number of total edges in Brain Gold standard ",total_b))
+print(cat("Baseline Brain Gold standard ",count_of_ones_b/total_b))
+
+count_of_ones_n <- brain_naive[V3 == 1, .N]
+total_n<- length(brain_naive$V3)
+print(cat("Number of positive edges in naive Gold standard ",count_of_ones_n))
+print(cat("Number of total edges in naive Gold standard ",total_n))
+print(cat("Baseline naive Gold standard ",count_of_ones_n/total_n))
+print(total_n/total_b)
+
+```
+
+
+```{r, echo=FALSE}
+#AuPRC complete 
+library(pracma)
+library(data.table)
+
+values_brain_sub_spear_20<-fread("../results/complete/values_complete_sub_spear_100_20_cutoffs192.txt")
+values_brain_sub_spear_25<-fread("../results/complete/values_complete_sub_spear_100_25_cutoffs192.txt")
+values_brain_sub_spear_30<-fread("../results/complete/values_complete_sub_spear_100_30_cutoffs192.txt")
+
+values_brain_sub_pear_20<-fread("../results/complete/values_complete_sub_pear_100_20_cutoffs192.txt")
+values_brain_sub_pear_25<-fread("../results/complete/values_complete_sub_pear_100_25_cutoffs192.txt")
+values_brain_sub_pear_30<-fread("../results/complete/values_complete_sub_pear_100_30_cutoffs192.txt")
+
+values_brain_boot_pear<-fread("../results/complete/values_complete_boot_pear_cutoffs192.txt")
+values_brain_boot_spear<-fread("../results/complete/values_complete_boot_spear_cutoffs192.txt")
+
+values_brain_wTO<-fread("../results/complete/values_complete_wTO_control_cutoffs192.txt")
+
+#function
+prec_rec<-function(values){
+
+  tp_n<-values$tp_s
+  fp_n<-values$fp_s
+  fn_n<-values$fn_s
+  values[, precision := ifelse((tp_n + fp_n) == 0, 1, tp_n / (tp_n + fp_n))]
+  values[, recall := ifelse((tp_n + fn_n) == 0, 1, tp_n / (tp_n + fn_n))] 
+  values
+  
+}
+values_brain_sub_spear_20<-prec_rec(values_brain_sub_spear_20)
+values_brain_sub_spear_25<-prec_rec(values_brain_sub_spear_25)
+values_brain_sub_spear_30<-prec_rec(values_brain_sub_spear_30)
+
+values_brain_sub_pear_20<-prec_rec(values_brain_sub_pear_20)
+values_brain_sub_pear_25<-prec_rec(values_brain_sub_pear_25)
+values_brain_sub_pear_30<-prec_rec(values_brain_sub_pear_30)
+
+values_brain_boot_spear<-prec_rec(values_brain_boot_spear)
+values_brain_boot_pear<-prec_rec(values_brain_boot_pear)
+
+values_brain_wTO<-prec_rec(values_brain_wTO)
+
+
+
+#### p r plots
+#baseline, everything better than baseline is better than random chance
+baseline<-4089/447758
+x<-seq(0,1,by=0.01  )
+y<-rep(baseline,times =length(x))
+
+
+plot(values_brain_sub_spear_20$recall,values_brain_sub_spear_20$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_brain_sub_spear_25$recall,values_brain_sub_spear_25$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_brain_sub_spear_30$recall,values_brain_sub_spear_30$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_brain_sub_pear_20$recall,values_brain_sub_pear_20$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_brain_sub_pear_25$recall,values_brain_sub_pear_25$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_brain_sub_pear_30$recall,values_brain_sub_pear_30$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_brain_boot_spear$recall,values_brain_boot_spear$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_brain_boot_pear$recall,values_brain_boot_pear$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_brain_wTO$recall,values_brain_wTO$precision,type = "l",col = "blue")
+lines(x,y)
+
+
+
+
+#lines(recall_s_s,precision_s_s,col = "red")
+print(cat("Baseline is ", baseline))
+
+area_under_curve_ss_20 <- abs(trapz(values_brain_sub_spear_20$recall,values_brain_sub_spear_20$precision))
+area_under_curve_ss_25 <- abs(trapz(values_brain_sub_spear_25$recall,values_brain_sub_spear_25$precision))
+area_under_curve_ss_30 <- abs(trapz(values_brain_sub_spear_30$recall,values_brain_sub_spear_30$precision))
+print(cat("AuPRC subsampling Spearman 20 is ",abs(area_under_curve_ss_20)))
+print(cat("AuPRC subsampling Spearman 25 is ",abs(area_under_curve_ss_25)))
+print(cat("AuPRC subsampling Spearman 30 is ",abs(area_under_curve_ss_30)))
+
+area_under_curve_sp_20 <- abs(trapz(values_brain_sub_pear_20$recall,values_brain_sub_pear_20$precision))
+area_under_curve_sp_25 <- abs(trapz(values_brain_sub_pear_25$recall,values_brain_sub_pear_25$precision))
+area_under_curve_sp_30 <- abs(trapz(values_brain_sub_pear_30$recall,values_brain_sub_pear_30$precision))
+print(cat("AuPRC subsampling Pearson 20 is ",abs(area_under_curve_sp_20)))
+print(cat("AuPRC subsampling Pearson 25 is ",abs(area_under_curve_sp_25)))
+print(cat("AuPRC subsampling Pearson 30 is ",abs(area_under_curve_sp_30)))
+
+
+area_under_curve_bp <- abs(trapz(values_brain_boot_pear$recall,values_brain_boot_pear$precision))
+print(cat("AuPRC Bootstrap Pearson is ",area_under_curve_bp))
+
+area_under_curve_bs <- abs(trapz(values_brain_boot_spear$recall,values_brain_boot_spear$precision))
+print(cat("AuPRC Bootstrap Spearman is ",area_under_curve_bs))
+
+area_under_curve_w <- abs(trapz(values_brain_wTO$recall,values_brain_wTO$precision))
+print(cat("AuPRC wTO is ",abs(area_under_curve_w)))
+
+
+
+auprc_table <- data.table(
+  subsampling = c("Subsampling Spearman 20","Subsampling Spearman 25", "Subsampling Spearman 30","Subsampling Pearson 20","Subsampling Pearson 25","Subsampling Pearson 30", "Bootstrap Pearson ","Bootstrap Spearman", "wTO"),
+  auprc = c(area_under_curve_ss_20,area_under_curve_ss_25 , area_under_curve_ss_30,area_under_curve_sp_20,area_under_curve_sp_25,area_under_curve_sp_30, area_under_curve_bp, area_under_curve_bs, area_under_curve_w)
+)
+auprc_table[order(-auprc)]
+```
+```{r}
+# AuROC
+library(pracma)
+library(data.table)
+
+values_brain_sub_spear_20<-fread("../results/sub_spear/values_final_sub_spearmen_100_20_cutoffs192.txt")
+values_brain_sub_spear_25<-fread("../results/sub_spear/values_final_sub_spearmen_100_25_cutoffs192.txt")
+values_brain_sub_spear_30<-fread("../results/sub_spear/values_final_sub_spearmen_100_30_cutoffs192.txt")
+
+values_brain_sub_pear_20<-fread("../results/sub_pear/values_final_sub_pearson_100_20_cutoffs192.txt")
+values_brain_sub_pear_25<-fread("../results/sub_pear/values_final_sub_pearson_100_25_cutoffs192.txt")
+values_brain_sub_pear_30<-fread("../results/sub_pear/values_final_sub_pearson_100_30_cutoffs192.txt")
+
+values_brain_boot_pear<-fread("../results/boot_pear/values_final_boot_pearson_1000_cutoffs192.txt")
+values_brain_boot_spear<-fread("../results/boot_spear/values_final_boot_spearmen_1000_cutoffs192.txt")
+
+values_brain_wTO<-fread("../results/wTO/values_wTO_control_cutoffs192.txt")
+
+#function
+tp_fp_rate<-function(values){
+
+  tp_n<-values$tp_s
+  fp_n<-values$fp_s
+  fn_n<-values$fn_s
+  tn_n<-values$tn_s
+  
+  values[, tp_rate :=  tp_n / (tp_n + fn_n)]
+  values[, fp_rate :=  fp_n / (fp_n + tn_n)] 
+  values
+  
+}
+values_brain_sub_spear_20<-tp_fp_rate(values_brain_sub_spear_20)
+values_brain_sub_spear_25<-tp_fp_rate(values_brain_sub_spear_25)
+values_brain_sub_spear_30<-tp_fp_rate(values_brain_sub_spear_30)
+
+values_brain_sub_pear_20<-tp_fp_rate(values_brain_sub_pear_20)
+values_brain_sub_pear_25<-tp_fp_rate(values_brain_sub_pear_25)
+values_brain_sub_pear_30<-tp_fp_rate(values_brain_sub_pear_30)
+
+values_brain_boot_spear<-tp_fp_rate(values_brain_boot_spear)
+values_brain_boot_pear<-tp_fp_rate(values_brain_boot_pear)
+
+values_brain_wTO<-tp_fp_rate(values_brain_wTO)
+
+
+
+#### p r plots
+#baseline, everything better than baseline is better than random chance 0.5
+#baseline<-1/2
+#x<-seq(0,1,by=0.01  )
+#y<-rep(baseline*x,times =length(x))
+
+
+plot(values_brain_sub_spear_20$fp_rate,values_brain_sub_spear_20$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+plot(values_brain_sub_spear_25$fp_rate,values_brain_sub_spear_25$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+plot(values_brain_sub_spear_30$fp_rate,values_brain_sub_spear_30$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+
+plot(values_brain_sub_pear_20$fp_rate,values_brain_sub_pear_20$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+plot(values_brain_sub_pear_25$fp_rate,values_brain_sub_pear_25$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+plot(values_brain_sub_pear_30$fp_rate,values_brain_sub_pear_30$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+
+plot(values_brain_boot_spear$fp_rate,values_brain_boot_spear$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+plot(values_brain_boot_pear$fp_rate,values_brain_boot_pear$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+
+plot(values_brain_wTO$fp_rate,values_brain_wTO$tp_rate,type = "l",col = "blue")
+lines(c(0, 1), c(0, 1), col = "red")
+
+
+
+
+#lines(recall_s_s,precision_s_s,col = "red")
+print(cat("Baseline is ", baseline))
+
+area_under_curve_ss_20 <- abs(trapz(values_brain_sub_spear_20$fp_rate,values_brain_sub_spear_20$tp_rate))
+area_under_curve_ss_25 <- abs(trapz(values_brain_sub_spear_25$fp_rate,values_brain_sub_spear_25$tp_rate))
+area_under_curve_ss_30 <- abs(trapz(values_brain_sub_spear_30$fp_rate,values_brain_sub_spear_30$tp_rate))
+print(cat("AuPRC subsampling Spearman 20 is ",abs(area_under_curve_ss_20)))
+print(cat("AuPRC subsampling Spearman 25 is ",abs(area_under_curve_ss_25)))
+print(cat("AuPRC subsampling Spearman 30 is ",abs(area_under_curve_ss_30)))
+
+area_under_curve_sp_20 <- abs(trapz(values_brain_sub_pear_20$fp_rate,values_brain_sub_pear_20$tp_rate))
+area_under_curve_sp_25 <- abs(trapz(values_brain_sub_pear_25$fp_rate,values_brain_sub_pear_25$tp_rate))
+area_under_curve_sp_30 <- abs(trapz(values_brain_sub_pear_30$fp_rate,values_brain_sub_pear_30$tp_rate))
+print(cat("AuPRC subsampling Pearson 20 is ",abs(area_under_curve_sp_20)))
+print(cat("AuPRC subsampling Pearson 25 is ",abs(area_under_curve_sp_25)))
+print(cat("AuPRC subsampling Pearson 30 is ",abs(area_under_curve_sp_30)))
+
+
+area_under_curve_bp <- abs(trapz(values_brain_boot_pear$fp_rate,values_brain_boot_pear$tp_rate))
+print(cat("AuPRC Bootstrap Pearson is ",area_under_curve_bp))
+
+area_under_curve_bs <- abs(trapz(values_brain_boot_spear$fp_rate,values_brain_boot_spear$tp_rate))
+print(cat("AuPRC Bootstrap Spearman is ",area_under_curve_bs))
+
+area_under_curve_w <- abs(trapz(values_brain_wTO$fp_rate,values_brain_wTO$tp_rate))
+print(cat("AuPRC wTO is ",abs(area_under_curve_w)))
+
+
+
+auroc_table <- data.table(
+  subsampling = c("Subsampling Spearman 20","Subsampling Spearman 25", "Subsampling Spearman 30","Subsampling Pearson 20","Subsampling Pearson 25","Subsampling Pearson 30", "Bootstrap Pearson ","Bootstrap Spearman", "wTO"),
+  auroc = c(area_under_curve_ss_20,area_under_curve_ss_25 , area_under_curve_ss_30,area_under_curve_sp_20,area_under_curve_sp_25,area_under_curve_sp_30, area_under_curve_bp, area_under_curve_bs, area_under_curve_w)
+)
+auroc_table[order(-auroc)]
+```
+
+
+
+```{r}
+library(pracma)
+library(data.table)
+
+values_naive_sub_spear_25<-fread("../results/naive/values_naive_sub_spear_cutoffs79.txt")
+values_naive_sub_spear_30<-fread("../results/naive/values_naive_sub_spear_30_cutoffs79.txt")
+values_naive_sub_pear_25<-fread("../results/naive/values_naive_sub_pear_cutoffs79.txt")
+values_naive_sub_pear_30<-fread("../results/naive/values_naive_sub_pear_30_cutoffs79.txt")
+values_naive_boot_spear<-fread("../results/naive/values_naive_boot_spear_cutoffs79.txt")
+values_naive_boot_pear<-fread("../results/naive/values_naive_boot_pear_cutoffs79.txt")
+values_naive_wTO<-fread("../results/naive/values_naive_wTO_control_cutoffs79.txt")
+
+
+########function
+prec_rec<-function(values){
+
+  tp_n<-values$tp_s
+  fp_n<-values$fp_s
+  fn_n<-values$fn_s
+  values[, precision := ifelse((tp_n + fp_n) == 0, 1, tp_n / (tp_n + fp_n))]
+  values[, recall := ifelse((tp_n + fn_n) == 0, 1, tp_n / (tp_n + fn_n))] 
+  values
+  
+  }
+
+
+values_naive_sub_spear_25<-prec_rec(values_naive_sub_spear_25)
+values_naive_sub_spear_30<-prec_rec(values_naive_sub_spear_30)
+values_naive_sub_pear_25<-prec_rec(values_naive_sub_pear_25)
+values_naive_sub_pear_30<-prec_rec(values_naive_sub_pear_30)
+values_naive_boot_spear<-prec_rec(values_naive_boot_spear)
+values_naive_boot_pear<-prec_rec(values_naive_boot_pear)
+values_naive_wTO<-prec_rec(values_naive_wTO)
+
+#### p r plots
+#baseline, everything better than baseline is better than random chance
+baseline<-1256077/11756980
+x<-seq(0,1,by=0.01  )
+y<-rep(baseline,times =length(x))
+##
+
+plot(values_naive_sub_spear_25$recall,values_naive_sub_spear_25$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_sub_spear_30$recall,values_naive_sub_spear_30$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_sub_pear_25$recall,values_naive_sub_pear_25$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_sub_pear_30$recall,values_naive_sub_pear_30$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_boot_spear$recall,values_naive_boot_spear$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_boot_pear$recall,values_naive_boot_pear$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_naive_wTO$recall,values_naive_wTO$precision,type = "l",col = "blue")
+lines(x,y)
+
+
+print(cat("Baseline is ", baseline))
+
+area_under_curve_n_ss_25 <- abs(trapz(values_naive_sub_spear_25$recall,values_naive_sub_spear_25$precision))
+print(cat("AUC Naive subsampling spearman 25 is ",area_under_curve_n_ss_25))
+
+area_under_curve_n_ss_30 <- abs(trapz(values_naive_sub_spear_30$recall,values_naive_sub_spear_30$precision))
+print(cat("AUC Naive subsampling spearman 30 is ",area_under_curve_n_ss_30))
+
+area_under_curve_n_sp_25 <- abs(trapz(values_naive_sub_pear_25$recall,values_naive_sub_pear_25$precision))
+print(cat("AUC Naive subsampling pearson 25 is ",area_under_curve_n_sp_25))
+
+area_under_curve_n_sp_30 <- abs(trapz(values_naive_sub_pear_30$recall,values_naive_sub_pear_30$precision))
+print(cat("AUC Naive subsampling pearson 30 is ",area_under_curve_n_sp_30))
+
+area_under_curve_n_bs <- abs(trapz(values_naive_boot_spear$recall,values_naive_boot_spear$precision))
+print(cat("AUC Naive bootstrap spearman is ",area_under_curve_n_bs))
+
+area_under_curve_n_bp <- abs(trapz(values_naive_boot_pear$recall,values_naive_boot_pear$precision))
+print(cat("AUC Naive bootstrap pearson is ",area_under_curve_n_bp))
+
+area_under_curve_n_wTO <- abs(trapz(values_naive_wTO$recall,values_naive_wTO$precision))
+print(cat("AUC Naive wTO is ",area_under_curve_n_wTO))
+
+auc_table_naive <- data.table(
+  subsampling = c("Subsampling Spearman 25","Subsampling Spearman 30","Subsampling Pearson 25","Subsampling Pearson 30" ,"Bootstrap Spearman", "Bootstrap Pearson ", "wTO"),
+  auc_n = c(area_under_curve_n_ss_25, area_under_curve_n_ss_30, area_under_curve_n_sp_25, area_under_curve_n_sp_30, area_under_curve_n_bs ,area_under_curve_n_bp, area_under_curve_n_wTO)
+)
+auc_table_naive[order(-auc_n)]
+
+```
+
+
+
+
+```{r}
+#AuPRC
+library(pracma)
+library(data.table)
+
+values_naive_sub_spear_20<-fread("../results/complete/naive/values_complete_naive_sub_spear_100_20_cutoffs192.txt")
+values_naive_sub_spear_25<-fread("../results/complete/naive/values_complete_naive_sub_spear_100_25_cutoffs192.txt")
+values_naive_sub_spear_30<-fread("../results/complete/naive/values_complete_naive_sub_spear_100_30_cutoffs192.txt")
+
+values_naive_sub_pear_20<-fread("../results/complete/naive/values_complete_naive_sub_pear_100_20_cutoffs192.txt")
+values_naive_sub_pear_25<-fread("../results/complete/naive/values_complete_naive_sub_pear_100_25_cutoffs192.txt")
+values_naive_sub_pear_30<-fread("../results/complete/naive/values_complete_naive_sub_pear_100_30_cutoffs192.txt")
+
+values_naive_boot_pear<-fread("../results/complete/naive/values_complete_naive_boot_pear_cutoffs192.txt")
+values_naive_boot_spear<-fread("../results/complete/naive/values_complete_naive_boot_spear_cutoffs192.txt")
+
+values_naive_wTO<-fread("../results/complete/naive/values_complete_naive_wTO_t01_cutoffs192.txt")
+
+#function
+prec_rec<-function(values){
+
+  tp_n<-values$tp_s
+  fp_n<-values$fp_s
+  fn_n<-values$fn_s
+  values[, precision := ifelse((tp_n + fp_n) == 0, 1, tp_n / (tp_n + fp_n))]
+  values[, recall := ifelse((tp_n + fn_n) == 0, 1, tp_n / (tp_n + fn_n))] 
+  values
+  
+}
+values_naive_sub_spear_20<-prec_rec(values_naive_sub_spear_20)
+values_naive_sub_spear_25<-prec_rec(values_naive_sub_spear_25)
+values_naive_sub_spear_30<-prec_rec(values_naive_sub_spear_30)
+
+values_naive_sub_pear_20<-prec_rec(values_naive_sub_pear_20)
+values_naive_sub_pear_25<-prec_rec(values_naive_sub_pear_25)
+values_naive_sub_pear_30<-prec_rec(values_naive_sub_pear_30)
+
+values_naive_boot_spear<-prec_rec(values_naive_boot_spear)
+values_naive_boot_pear<-prec_rec(values_naive_boot_pear)
+
+values_naive_wTO<-prec_rec(values_naive_wTO)
+
+
+
+#### p r plots
+#baseline, everything better than baseline is better than random chance
+baseline<-1256077/11756980
+x<-seq(0,1,by=0.01  )
+y<-rep(baseline,times =length(x))
+
+
+
+plot(values_naive_sub_spear_20$recall,values_naive_sub_spear_20$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_naive_sub_spear_25$recall,values_naive_sub_spear_25$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_naive_sub_spear_30$recall,values_naive_sub_spear_30$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_sub_pear_20$recall,values_naive_sub_pear_20$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_naive_sub_pear_25$recall,values_naive_sub_pear_25$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_naive_sub_pear_30$recall,values_naive_sub_pear_30$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_boot_spear$recall,values_naive_boot_spear$precision,type = "l",col = "blue")
+lines(x,y)
+plot(values_naive_boot_pear$recall,values_naive_boot_pear$precision,type = "l",col = "blue")
+lines(x,y)
+
+plot(values_naive_wTO$recall,values_naive_wTO$precision,type = "l",col = "blue")
+lines(x,y)
+
+
+print(cat("Baseline is ", baseline))
+
+area_under_curve_ss_20 <- abs(trapz(values_naive_sub_spear_20$recall,values_naive_sub_spear_20$precision))
+area_under_curve_ss_25 <- abs(trapz(values_naive_sub_spear_25$recall,values_naive_sub_spear_25$precision))
+area_under_curve_ss_30 <- abs(trapz(values_naive_sub_spear_30$recall,values_naive_sub_spear_30$precision))
+print(cat("AuPRC subsampling Spearman 20 is ",abs(area_under_curve_ss_20)))
+print(cat("AuPRC subsampling Spearman 25 is ",abs(area_under_curve_ss_25)))
+print(cat("AuPRC subsampling Spearman 30 is ",abs(area_under_curve_ss_30)))
+
+area_under_curve_sp_20 <- abs(trapz(values_naive_sub_pear_20$recall,values_naive_sub_pear_20$precision))
+area_under_curve_sp_25 <- abs(trapz(values_naive_sub_pear_25$recall,values_naive_sub_pear_25$precision))
+area_under_curve_sp_30 <- abs(trapz(values_naive_sub_pear_30$recall,values_naive_sub_pear_30$precision))
+print(cat("AuPRC subsampling Pearson 20 is ",abs(area_under_curve_sp_20)))
+print(cat("AuPRC subsampling Pearson 25 is ",abs(area_under_curve_sp_25)))
+print(cat("AuPRC subsampling Pearson 30 is ",abs(area_under_curve_sp_30)))
+
+
+area_under_curve_bp <- abs(trapz(values_naive_boot_pear$recall,values_naive_boot_pear$precision))
+print(cat("AuPRC Bootstrap Pearson is ",area_under_curve_bp))
+
+area_under_curve_bs <- abs(trapz(values_naive_boot_spear$recall,values_naive_boot_spear$precision))
+print(cat("AuPRC Bootstrap Spearman is ",area_under_curve_bs))
+
+area_under_curve_w <- abs(trapz(values_naive_wTO$recall,values_naive_wTO$precision))
+print(cat("AuPRC wTO is ",abs(area_under_curve_w)))
+
+
+auprc = c(area_under_curve_ss_20,area_under_curve_ss_25 , area_under_curve_ss_30,area_under_curve_sp_20,area_under_curve_sp_25,area_under_curve_sp_30, area_under_curve_bp, area_under_curve_bs, area_under_curve_w)
+subsampling = c("Subsampling Spearman 20","Subsampling Spearman 25", "Subsampling Spearman 30","Subsampling Pearson 20","Subsampling Pearson 25","Subsampling Pearson 30", "Bootstrap Pearson ","Bootstrap Spearman", "wTO")
+
+auprc_table <- data.table( subsampling, auprc )
+auprc_table[order(-auprc)]
+```
+
